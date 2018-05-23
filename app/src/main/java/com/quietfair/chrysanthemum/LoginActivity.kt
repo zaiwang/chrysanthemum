@@ -1,39 +1,48 @@
 package com.quietfair.chrysanthemum
 
+import android.Manifest.permission.READ_CONTACTS
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.TargetApi
-import android.content.pm.PackageManager
-import android.support.design.widget.Snackbar
-import android.support.v7.app.AppCompatActivity
 import android.app.LoaderManager.LoaderCallbacks
 import android.content.CursorLoader
+import android.content.Intent
 import android.content.Loader
+import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.support.design.widget.Snackbar
+import android.support.v7.app.AppCompatActivity
 import android.text.TextUtils
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import android.widget.TextView
-
-import java.util.ArrayList
-import android.Manifest.permission.READ_CONTACTS
-
+import android.widget.Toast
+import com.tencent.connect.common.Constants
+import com.tencent.tauth.IUiListener
+import com.tencent.tauth.Tencent
+import com.tencent.tauth.UiError
 import kotlinx.android.synthetic.main.activity_login.*
+import org.json.JSONObject
+import java.util.*
 
 /**
  * A login screen that offers login via email/password.
  */
 class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
+    private val TAG = "LoginActivity"
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private var mAuthTask: UserLoginTask? = null
+    private val QQ_APP_ID = "1106845963"
+    var mTencent: Tencent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +58,71 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
         })
 
         email_sign_in_button.setOnClickListener { attemptLogin() }
+
+        mTencent = Tencent.createInstance(QQ_APP_ID, this)
+        if (mTencent != null) {
+            if (mTencent!!.isSessionValid) {
+                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
+        }
+
+        qq_sign_in_button.setOnClickListener {
+            mTencent?.login(this, "all", loginListener)
+        }
+    }
+
+    private open inner class BaseUiListener : IUiListener {
+
+        override fun onComplete(response: Any?) {
+            if (response is JSONObject) {
+                Toast.makeText(this@LoginActivity, "登录成功", Toast.LENGTH_LONG).show()
+                doComplete(response)
+            } else {
+                Log.e(TAG, "登录失败")
+            }
+
+        }
+
+        protected open fun doComplete(jsonObject: JSONObject) {
+            try {
+                val token = jsonObject.getString(Constants.PARAM_ACCESS_TOKEN)
+                val expires = jsonObject.getString(Constants.PARAM_EXPIRES_IN)
+                val openId = jsonObject.getString(Constants.PARAM_OPEN_ID)
+                if (!TextUtils.isEmpty(token) && !TextUtils.isEmpty(expires)
+                        && !TextUtils.isEmpty(openId)) {
+                    mTencent?.setAccessToken(token, expires)
+                    mTencent?.setOpenId(openId)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "any error", e)
+            }
+
+            val intent = Intent(this@LoginActivity, MainActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+
+        override fun onError(e: UiError) {
+            Toast.makeText(this@LoginActivity, "onError: " + e.errorDetail, Toast.LENGTH_LONG).show()
+        }
+
+        override fun onCancel() {
+            Toast.makeText(this@LoginActivity, "onCancel", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private var loginListener: IUiListener = object : BaseUiListener() {
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        Log.d(TAG, "-->onActivityResult $requestCode resultCode=$resultCode")
+        if (requestCode == Constants.REQUEST_LOGIN || requestCode == Constants.REQUEST_APPBAR) {
+            Tencent.onActivityResultData(requestCode, resultCode, data, loginListener)
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun populateAutoComplete() {
@@ -266,6 +340,8 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
             showProgress(false)
 
             if (success!!) {
+                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                startActivity(intent)
                 finish()
             } else {
                 password.error = getString(R.string.error_incorrect_password)
