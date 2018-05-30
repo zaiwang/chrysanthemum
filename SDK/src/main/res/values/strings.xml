@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SDK</string>
+    <string name="unknown_error">未知错误</string>
+</resources>

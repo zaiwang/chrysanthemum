@@ -5,13 +5,13 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.TargetApi
 import android.app.LoaderManager.LoaderCallbacks
+import android.app.ProgressDialog
 import android.content.CursorLoader
 import android.content.Intent
 import android.content.Loader
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
-import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -24,6 +24,9 @@ import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
+import com.quietfair.chrysanthemum.user.UserBasicActivity
+import com.quietfair.sdk.user.User
+import com.quietfair.sdk.user.UserManager
 import com.tencent.connect.common.Constants
 import com.tencent.tauth.IUiListener
 import com.tencent.tauth.Tencent
@@ -37,12 +40,9 @@ import java.util.*
  */
 class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
     private val TAG = "LoginActivity"
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private var mAuthTask: UserLoginTask? = null
+
     private val QQ_APP_ID = "1106845963"
-    var mTencent: Tencent? = null
+    private var mTencent: Tencent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,11 +60,9 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
         email_sign_in_button.setOnClickListener { attemptLogin() }
 
         mTencent = Tencent.createInstance(QQ_APP_ID, this)
-        if (mTencent != null) {
-            if (mTencent!!.isSessionValid) {
-                val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                startActivity(intent)
-                finish()
+        mTencent?.let {
+            if (it.isSessionValid) {
+                toMain()
             }
         }
 
@@ -73,48 +71,61 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
         }
     }
 
-    private open inner class BaseUiListener : IUiListener {
+    private var loginListener = object : IUiListener {
 
         override fun onComplete(response: Any?) {
             if (response is JSONObject) {
-                Toast.makeText(this@LoginActivity, "登录成功", Toast.LENGTH_LONG).show()
-                doComplete(response)
-            } else {
-                Log.e(TAG, "登录失败")
-            }
+                try {
+                    val token = response.getString(Constants.PARAM_ACCESS_TOKEN)
+                    val expires = response.getString(Constants.PARAM_EXPIRES_IN)
+                    val openId = response.getString(Constants.PARAM_OPEN_ID)
+                    if (!TextUtils.isEmpty(token) && !TextUtils.isEmpty(expires)
+                            && !TextUtils.isEmpty(openId)) {
+                        mTencent?.setAccessToken(token, expires)
+                        mTencent?.openId = openId
+                        val loadingProgressBar = ProgressDialog.show(this@LoginActivity, null, getString(R.string.loading))
+                        UserManager.bindQQ(openId, object : UserManager.BindResultListener {
+                            override fun onBindFailed(errorCode: Int, desc: String?) {
+                                runOnUiThread {
+                                    loadingProgressBar.dismiss()
+                                    Toast.makeText(this@LoginActivity, R.string.unknown_error, Toast.LENGTH_LONG).show()
+                                }
+                            }
 
-        }
+                            override fun onBindSuccess(user: User) {
+                                runOnUiThread{
+                                    loadingProgressBar.dismiss()
+                                }
+                                if (user.sex == 0 || user.ageRange == 0 || user.liveProvince == 0) {
+                                    val intent = Intent(this@LoginActivity, UserBasicActivity::class.java)
+                                    intent.putExtra("quietfair.user_id", user.userId)
+                                    startActivity(intent)
+                                } else {
+                                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                                    startActivity(intent)
+                                }
+                                finish()
+                            }
 
-        protected open fun doComplete(jsonObject: JSONObject) {
-            try {
-                val token = jsonObject.getString(Constants.PARAM_ACCESS_TOKEN)
-                val expires = jsonObject.getString(Constants.PARAM_EXPIRES_IN)
-                val openId = jsonObject.getString(Constants.PARAM_OPEN_ID)
-                if (!TextUtils.isEmpty(token) && !TextUtils.isEmpty(expires)
-                        && !TextUtils.isEmpty(openId)) {
-                    mTencent?.setAccessToken(token, expires)
-                    mTencent?.setOpenId(openId)
+                        })
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@LoginActivity, getString(R.string.tips_error) + " " + e.message, Toast.LENGTH_LONG).show()
+                    Log.e(TAG, "any error", e)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "any error", e)
+            } else {
+                Toast.makeText(this@LoginActivity, getString(R.string.tips_login_failed), Toast.LENGTH_LONG).show()
             }
 
-            val intent = Intent(this@LoginActivity, MainActivity::class.java)
-            startActivity(intent)
-            finish()
         }
 
         override fun onError(e: UiError) {
-            Toast.makeText(this@LoginActivity, "onError: " + e.errorDetail, Toast.LENGTH_LONG).show()
+            Toast.makeText(this@LoginActivity, getString(R.string.tips_error) + " " + e.errorDetail, Toast.LENGTH_LONG).show()
         }
 
         override fun onCancel() {
-            Toast.makeText(this@LoginActivity, "onCancel", Toast.LENGTH_LONG).show()
+            Toast.makeText(this@LoginActivity, R.string.tips_cancel_login, Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private var loginListener: IUiListener = object : BaseUiListener() {
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -169,10 +180,6 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
      * errors are presented and no actual login attempt is made.
      */
     private fun attemptLogin() {
-        if (mAuthTask != null) {
-            return
-        }
-
         // Reset errors.
         email.error = null
         password.error = null
@@ -210,9 +217,14 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true)
-            mAuthTask = UserLoginTask(emailStr, passwordStr)
-            mAuthTask!!.execute(null as Void?)
+
         }
+    }
+
+    private fun toMain() {
+        val intent = Intent(this@LoginActivity, MainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun isEmailValid(email: String): Boolean {
@@ -309,52 +321,6 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
         val IS_PRIMARY = 1
     }
 
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    inner class UserLoginTask internal constructor(private val mEmail: String, private val mPassword: String) : AsyncTask<Void, Void, Boolean>() {
-
-        override fun doInBackground(vararg params: Void): Boolean? {
-            // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000)
-            } catch (e: InterruptedException) {
-                return false
-            }
-
-            return DUMMY_CREDENTIALS
-                    .map { it.split(":") }
-                    .firstOrNull { it[0] == mEmail }
-                    ?.let {
-                        // Account exists, return true if the password matches.
-                        it[1] == mPassword
-                    }
-                    ?: true
-        }
-
-        override fun onPostExecute(success: Boolean?) {
-            mAuthTask = null
-            showProgress(false)
-
-            if (success!!) {
-                val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            } else {
-                password.error = getString(R.string.error_incorrect_password)
-                password.requestFocus()
-            }
-        }
-
-        override fun onCancelled() {
-            mAuthTask = null
-            showProgress(false)
-        }
-    }
-
     companion object {
 
         /**
@@ -362,10 +328,5 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
          */
         private val REQUEST_READ_CONTACTS = 0
 
-        /**
-         * A dummy authentication store containing known user names and passwords.
-         * TODO: remove after connecting to a real authentication system.
-         */
-        private val DUMMY_CREDENTIALS = arrayOf("foo@example.com:hello", "bar@example.com:world")
     }
 }
