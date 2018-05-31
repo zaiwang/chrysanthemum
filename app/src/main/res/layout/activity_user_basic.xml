@@ -7,6 +7,15 @@
     tools:context=".user.UserBasicActivity"
     tools:layout_editor_absoluteY="81dp">
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/my_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Dark" />
+
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="wrap_content"
@@ -14,33 +23,38 @@
         android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:srcCompat="@tools:sample/avatars" />
+        app:layout_constraintTop_toBottomOf="@id/my_toolbar" />
 
-    <EditText
-        android:id="@+id/editText"
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/til"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Name"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+        app:layout_constraintTop_toBottomOf="@+id/imageView">
+
+        <EditText
+            android:id="@+id/name_editText"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:ems="10"
+            android:hint="@string/name_input"
+            android:inputType="textPersonName"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:textSize="16sp" />
+    </android.support.design.widget.TextInputLayout>
+
 
     <FrameLayout
         android:id="@+id/frameLayout"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@android:color/holo_orange_light"
+        android:background="@color/colorCommonLine"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText">
+        app:layout_constraintTop_toBottomOf="@+id/til">
 
     </FrameLayout>
 
@@ -48,12 +62,11 @@
         android:id="@+id/radioGroup"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
+        android:background="@android:color/white"
         android:gravity="center_vertical"
         android:orientation="horizontal"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/frameLayout">
@@ -62,23 +75,25 @@
             android:id="@+id/radioButtonMale"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginRight="8dp"
             android:layout_weight="1"
             android:checked="true"
-            android:text="男" />
+            android:text="@string/male" />
 
         <RadioButton
             android:id="@+id/radioButtonFemale"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
             android:layout_weight="1"
-            android:text="女" />
+            android:text="@string/female" />
     </RadioGroup>
 
     <FrameLayout
         android:id="@+id/frameLayout2"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@android:color/holo_orange_light"
+        android:background="@color/colorCommonLine"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/radioGroup">
@@ -89,11 +104,10 @@
         android:id="@+id/spinner"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
+        android:background="@drawable/select_common_press"
         android:gravity="center_vertical"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/frameLayout2" />
@@ -102,7 +116,7 @@
         android:id="@+id/frameLayout3"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@android:color/holo_orange_light"
+        android:background="@color/colorCommonLine"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/spinner">
@@ -113,12 +127,11 @@
         android:id="@+id/province_select_textView"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
+        android:background="@drawable/select_common_press"
         android:gravity="center_vertical"
-        android:text="江苏省"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:text="@string/no_location_set"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/frameLayout3" />
@@ -127,7 +140,7 @@
         android:id="@+id/frameLayout4"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="@android:color/holo_orange_light"
+        android:background="@color/colorCommonLine"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/province_select_textView">

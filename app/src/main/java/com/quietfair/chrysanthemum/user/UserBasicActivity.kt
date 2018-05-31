@@ -3,6 +3,7 @@ package com.quietfair.chrysanthemum.user
 import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -25,7 +26,7 @@ class UserBasicActivity : AppCompatActivity(), AdapterView.OnItemSelectedListene
     private var userId: String? = null
     private lateinit var adapter: ArrayAdapter<CharSequence>
     private var ageRange = 0
-    private var liveProvince = 1
+    private var liveProvince = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,13 +56,15 @@ class UserBasicActivity : AppCompatActivity(), AdapterView.OnItemSelectedListene
             2
         }
         val updateJob = launch(CommonPool) {
-            resultCode = UserManager.updateUserBasic(userId!!, sex, ageRange, liveProvince)
+            resultCode = UserManager.updateUserBasic(userId!!, sex, ageRange, liveProvince, name_editText.text.toString())
         }
         updateJob.join()
         loadingProgressBar.dismiss()
         if (resultCode == 0) {
             startActivity(Intent(this@UserBasicActivity, MainActivity::class.java))
             finish()
+        } else {
+            Toast.makeText(this@UserBasicActivity, R.string.unknown_error, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -85,7 +88,11 @@ class UserBasicActivity : AppCompatActivity(), AdapterView.OnItemSelectedListene
         when(requestCode) {
             0 -> {
                 if (resultCode == Activity.RESULT_OK) {
-                    province_select_textView.text = data?.getStringExtra("quietfair.province")
+                    data?.let {
+                        province_select_textView.text = data.getStringExtra("quietfair.province")
+                        liveProvince = data.getIntExtra("quietfair.province_index", 0)
+                        province_select_textView.setTextColor(Color.BLACK)
+                    }
                 }
             }
         }
@@ -98,10 +105,22 @@ class UserBasicActivity : AppCompatActivity(), AdapterView.OnItemSelectedListene
 
     override fun onOptionsItemSelected(item: MenuItem?) = when (item?.itemId) {
         R.id.action_save -> {
-            updateUserBasic()
-            true
+            if (name_editText.text.toString() != "") {
+                if (liveProvince == 0) {
+                    Toast.makeText(this@UserBasicActivity, R.string.no_location_set, Toast.LENGTH_SHORT).show()
+                    false
+                } else {
+                    updateUserBasic()
+                    true
+                }
+            } else {
+                name_editText.error = getString(R.string.name_cannot_empty)
+                name_editText.requestFocus()
+                false
+            }
         }
         else ->
             super.onOptionsItemSelected(item)
     }
+
 }

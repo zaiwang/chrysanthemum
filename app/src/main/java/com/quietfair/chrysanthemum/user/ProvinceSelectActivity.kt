@@ -9,6 +9,7 @@ import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -26,6 +27,7 @@ class ProvinceSelectActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_province_select)
         setSupportActionBar(findViewById(R.id.my_toolbar))
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val inputStream =  resources.assets.open("province_city.json")
 
         val chinaLocations: ArrayList<ChinaLocation> = Gson().fromJson(InputStreamReader(inputStream), object : TypeToken<List<ChinaLocation>>() {}.type)
@@ -70,6 +72,16 @@ class ProvinceSelectActivity : AppCompatActivity() {
             }
         }
 
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?) = when(item?.itemId) {
+        android.R.id.home -> {
+            finish()
+            true
+        }
+        else -> {
+            super.onOptionsItemSelected(item)
+        }
     }
 
     companion object {

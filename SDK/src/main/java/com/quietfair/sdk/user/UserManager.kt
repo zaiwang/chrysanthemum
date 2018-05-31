@@ -5,6 +5,7 @@ import android.content.Context
 import android.text.TextUtils
 import android.util.Log
 import com.quietfair.sdk.ChrysanthemumConstants
+import com.quietfair.sdk.R
 import com.quietfair.utils.http.NetworkErrorDesc
 import com.quietfair.utils.http.OkHttpNetworkDataAcquisition
 import com.quietfair.utils.http.OnHttpResultGotListener
@@ -73,10 +74,7 @@ object UserManager {
         }
     }
 
-    public fun updateUserBasic(userId: String, sex: Int, ageRange: Int, liveProvince: Int): Int {
-        if (TextUtils.isEmpty(userId)) {
-            return -1
-        }
+    public fun updateUserBasic(userId: String, sex: Int, ageRange: Int, liveProvince: Int, nickName: String): Int {
         if (sex == 0 || ageRange == 0 || liveProvince == 0) {
             return -1
         }
@@ -85,6 +83,7 @@ object UserManager {
             dataJSONObject.put("sex", sex)
             dataJSONObject.put("age_range", ageRange)
             dataJSONObject.put("live_province", liveProvince)
+            dataJSONObject.put("nick_name", nickName)
             val result = OkHttpNetworkDataAcquisition.postStringSynchronous(ChrysanthemumConstants.HTTP_HOST + ChrysanthemumConstants.userBasic(userId!!), dataJSONObject.toString())
             val resultJSONObject = JSONObject(result)
             resultJSONObject.getInt("code")
@@ -132,9 +131,12 @@ object UserManager {
                                 bindResultListener.onBindSuccess(User(token, userId, 0, 0, 0))
                             }
                         }
+                    } else {
+                        bindResultListener.onBindFailed(code, mContext.getString(R.string.unknown_error))
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "any error", e)
+                    bindResultListener.onBindFailed(-1, e.message)
                 }
 
             }

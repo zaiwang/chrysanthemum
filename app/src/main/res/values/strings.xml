@@ -29,6 +29,10 @@
     <string name="current_location">当前位置</string>
     <string name="location_getting">正在获取位置</string>
     <string name="no_location_set">点击选择所在地</string>
+    <string name="male">男</string>
+    <string name="female">女</string>
+    <string name="name_input">输入你喜欢的昵称吧</string>
+    <string name="name_cannot_empty">昵称不能为空</string>
 
     <string-array name="age_range">
         <item>10后</item>
