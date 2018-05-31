@@ -3,4 +3,9 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="colorCommonBackGround">#ebebeb</color>
+    <color name="colorCommonLine">#fcfcfc</color>
+    <color name="colorTextPrimary">#373737</color>
+    <color name="colorTextPrimaryDark">#919191</color>
+    <color name="colorCommonPress">#ccc</color>
 </resources>

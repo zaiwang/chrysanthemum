@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
-import android.os.Looper
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.Menu
@@ -31,6 +30,7 @@ class UserBasicActivity : AppCompatActivity(), AdapterView.OnItemSelectedListene
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_basic)
+        setSupportActionBar(findViewById(R.id.my_toolbar))
         supportActionBar?.setTitle(R.string.title_basic)
         userId = intent?.getStringExtra("quietfair.user_id")
         if (userId == null) {
@@ -85,7 +85,7 @@ class UserBasicActivity : AppCompatActivity(), AdapterView.OnItemSelectedListene
         when(requestCode) {
             0 -> {
                 if (resultCode == Activity.RESULT_OK) {
-
+                    province_select_textView.text = data?.getStringExtra("quietfair.province")
                 }
             }
         }

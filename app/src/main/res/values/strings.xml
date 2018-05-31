@@ -27,6 +27,8 @@
     <string name="action_save">保存</string>
     <string name="loading">加载中……</string>
     <string name="current_location">当前位置</string>
+    <string name="location_getting">正在获取位置</string>
+    <string name="no_location_set">点击选择所在地</string>
 
     <string-array name="age_range">
         <item>10后</item>

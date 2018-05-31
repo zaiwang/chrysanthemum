@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".user.ProvinceSelectActivity">
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/my_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextAppearance="@style/ToolbarTitle" />
+
     <TextView
         android:id="@+id/label_current_location"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/my_toolbar"
         android:layout_margin="8dp"
-        android:text="@string/current_location" />
+        android:text="@string/current_location"
+        android:textColor="@color/colorTextPrimaryDark" />
 
     <TextView
         android:id="@+id/current_location_textView"
@@ -18,14 +31,17 @@
         android:layout_height="48dp"
         android:layout_below="@id/label_current_location"
         android:layout_marginBottom="16dp"
+        android:background="@android:color/white"
         android:gravity="center_vertical"
+        android:paddingStart="8dp"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        android:paddingStart="8dp"
-        android:text="江苏省"
+        android:text="@string/location_getting"
+        android:textColor="@color/colorTextPrimary"
         android:textSize="18sp" />
 
     <android.support.v7.widget.RecyclerView
+        android:id="@+id/location_list_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/current_location_textView" />
