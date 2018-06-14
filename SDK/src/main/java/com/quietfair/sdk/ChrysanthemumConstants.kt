@@ -5,8 +5,8 @@ object ChrysanthemumConstants {
     val HTTP_HOST = "http://192.168.31.54:3000/"
 
     @JvmStatic
-    public fun qqBind(openId: String): String {
-        return "users/account/qq/$openId"
+    public fun qqBind(openId: String, accessToken: String): String {
+        return "users/account/qq/$openId/$accessToken"
     }
 
     @JvmStatic

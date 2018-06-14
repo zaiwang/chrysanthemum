@@ -25,13 +25,14 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import com.quietfair.chrysanthemum.user.UserBasicActivity
-import com.quietfair.sdk.user.User
 import com.quietfair.sdk.user.UserManager
 import com.tencent.connect.common.Constants
 import com.tencent.tauth.IUiListener
 import com.tencent.tauth.Tencent
 import com.tencent.tauth.UiError
 import kotlinx.android.synthetic.main.activity_login.*
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.launch
 import org.json.JSONObject
 import java.util.*
 
@@ -41,8 +42,7 @@ import java.util.*
 class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
     private val TAG = "LoginActivity"
 
-    private val QQ_APP_ID = "1106845963"
-    private var mTencent: Tencent? = null
+    private lateinit var mTencent: Tencent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,15 +60,10 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
 
         email_sign_in_button.setOnClickListener { attemptLogin() }
 
-        mTencent = Tencent.createInstance(QQ_APP_ID, this)
-        mTencent?.let {
-            if (it.isSessionValid) {
-                toMain()
-            }
-        }
+        mTencent = Tencent.createInstance(SplashActivity.QQ_APP_ID, this)
 
         qq_sign_in_button.setOnClickListener {
-            mTencent?.login(this, "all", loginListener)
+            mTencent.login(this, "all", loginListener)
         }
     }
 
@@ -77,38 +72,15 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
         override fun onComplete(response: Any?) {
             if (response is JSONObject) {
                 try {
+                    Log.d(TAG, "get qq login response:$response")
                     val token = response.getString(Constants.PARAM_ACCESS_TOKEN)
                     val expires = response.getString(Constants.PARAM_EXPIRES_IN)
                     val openId = response.getString(Constants.PARAM_OPEN_ID)
                     if (!TextUtils.isEmpty(token) && !TextUtils.isEmpty(expires)
                             && !TextUtils.isEmpty(openId)) {
-                        mTencent?.setAccessToken(token, expires)
-                        mTencent?.openId = openId
-                        val loadingProgressBar = ProgressDialog.show(this@LoginActivity, null, getString(R.string.loading))
-                        UserManager.bindQQ(openId, object : UserManager.BindResultListener {
-                            override fun onBindFailed(errorCode: Int, desc: String?) {
-                                runOnUiThread {
-                                    loadingProgressBar.dismiss()
-                                    Toast.makeText(this@LoginActivity, R.string.unknown_error, Toast.LENGTH_LONG).show()
-                                }
-                            }
-
-                            override fun onBindSuccess(user: User) {
-                                runOnUiThread{
-                                    loadingProgressBar.dismiss()
-                                }
-                                if (user.sex == 0 || user.ageRange == 0 || user.liveProvince == 0) {
-                                    val intent = Intent(this@LoginActivity, UserBasicActivity::class.java)
-                                    intent.putExtra("quietfair.user_id", user.userId)
-                                    startActivity(intent)
-                                } else {
-                                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                                    startActivity(intent)
-                                }
-                                finish()
-                            }
-
-                        })
+                        mTencent.setAccessToken(token, expires)
+                        mTencent.openId = openId
+                        bindQQ(openId, token)
                     }
                 } catch (e: Exception) {
                     Toast.makeText(this@LoginActivity, getString(R.string.tips_error) + " " + e.message, Toast.LENGTH_LONG).show()
@@ -126,6 +98,32 @@ class LoginActivity : AppCompatActivity(), LoaderCallbacks<Cursor> {
 
         override fun onCancel() {
             Toast.makeText(this@LoginActivity, R.string.tips_cancel_login, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun bindQQ(openId: String, token: String) {
+        val loadingProgressBar = ProgressDialog.show(this@LoginActivity, null, getString(R.string.loading))
+        launch(CommonPool) {
+            val user = UserManager.bindQQ(openId, token)
+            if (user == null) {
+                runOnUiThread {
+                    loadingProgressBar.dismiss()
+                    Toast.makeText(this@LoginActivity, R.string.unknown_error, Toast.LENGTH_LONG).show()
+                }
+            } else {
+                if (TextUtils.isEmpty(user.gender) || user.birthYear == 0 ||  TextUtils.isEmpty(user.liveProvince)) {
+                    val intent = Intent(this@LoginActivity, UserBasicActivity::class.java)
+                    intent.putExtra("quietfair.user_id", user.userId)
+                    startActivity(intent)
+                } else {
+                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                    startActivity(intent)
+                }
+                runOnUiThread {
+                    loadingProgressBar.dismiss()
+                }
+                finish()
+            }
         }
     }
 

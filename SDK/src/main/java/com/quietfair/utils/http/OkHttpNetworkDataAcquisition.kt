@@ -120,9 +120,10 @@ object OkHttpNetworkDataAcquisition {
 
     @Throws(IOException::class)
     @JvmOverloads
-    fun postStringSynchronous(url: String, post: String, mediaType: String = "application/json; charset=utf-8"): String? {
+    fun postStringSynchronous(url: String, post: String?, mediaType: String = "application/json; charset=utf-8"): String? {
         log.trace("http connect to url>>$url\npost body:\n\t$post")
-        val body = RequestBody.create(MediaType.parse(mediaType), post)
+        val postData = post ?: "{}"
+        val body = RequestBody.create(MediaType.parse(mediaType), postData)
         val builder = Request.Builder()
         addHttpHead(builder, headersMap)
         builder.tag(url)
